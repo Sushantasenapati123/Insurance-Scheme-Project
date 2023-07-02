@@ -1,0 +1,216 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<div class="col-md-9 register-right">
+
+
+
+    <div class="row">
+        <div class="form-group col-md-4">
+            <label for="HospitalName">Hospital Name</label><span>*</span>
+            <select asp="HospitalNmae" id="Hosp_ID" onchange="getDr(this.value)" asp-items="@(new SelectList( ViewBag.College,"Hosp_ID","Hosp_Name"))" class="form-control">
+            </select>
+        </div>
+        <div class="form-group col-md-4">
+            <label for="Doctor Name">Doctort Name</label><span>*</span>
+            <select asp="Doctorid" id="Doct_ID" onchange="getpatient(this.value)" class="form-control">
+            </select>
+        </div>
+        <div class="form-group col-md-4">
+            <label for="Patient Name">Patient Name</label><span>*</span>
+            <select asp="PatientID" id="Patient_ID" onchange="getsvhemeandInsu(this.value)" class="form-control">
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group col-md-4">
+            <label for="Insurance Name">Insurance Name</label><span>*</span>
+            <input type="text" id="Insurance_Name" readonly class="form-control" placeholder="Insurance" />
+        </div>
+        <div class="form-group col-md-4">
+            <label for="Scheme Name">Scheme Name</label><span>*</span>
+            <input type="text" id="Insurance_Scheme_Name" readonly class="form-control" placeholder="Scheme Nme" />
+            <input type="hidden" id="Insurance_Scheme_ID" />
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="form-group col-md-4">
+            <label for="DOB">Admission Date</label><span>*</span>
+            <input type="date" id="Admission_Date" class="form-control" />
+        </div>
+
+        <div class="form-group col-md-4">
+            <label for="DOB">Discharge Date</label><span>*</span>
+            <input type="date" id="Discharge_Date" class="form-control" />
+        </div>
+
+
+        <div class="form-group col-md-4">
+            <label for="DOB">Total Expenses</label><span>*</span>
+            <input type="text" id="Total_Expenses" class="form-control" placeholder="Total Expenses" />
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-sm-12 text-center mt-3 form-group">
+            <input type="button" id="saveupdate" value="Save" class="btnRegister " />
+        </div>
+    </div>
+</div>
+
+
+
+<table class=" badge-pill" id="table_college" border="1">
+    <thead>
+        <tr class="badge-success">
+
+            <th>
+                Doct_Name
+            </th>
+            <th>
+                Patient_Name
+            </th>
+            <th>
+                Insurance_Name
+            </th>
+            <th>
+                Insurance_Scheme_Name
+
+            </th>
+            <th>
+                Admission_Date
+            </th>
+            <th>
+                Discharge_Date
+            </th>
+            <th>
+                Total_Expenses
+            </th>
+
+            <th>
+                Insured_amount
+            </th>
+            <th>
+                Total_Payble_Amount
+            </th>
+        </tr>
+
+    </thead>
+    <tbody class="border-dark badge-pill ">
+    </tbody>
+</table>
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+<script src="~/validation/validation.js"></script>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<link href="~/css/site.css" rel="stylesheet" />
+<script type="text/javascript">
+    $(window).on("load", function () {
+        GetAllData();
+    });
+
+    function getDr(value) {
+        alert(value);
+        debugger;
+
+        $("#Doct_ID").empty();
+        var Data = { Hosp_ID: value }
+        $.getJSON("/Insurance/Doctor_Bind", { Hosp_ID: value }, function (data) {
+            data = JSON.parse(data);
+            var v = "<option value=0>Please Select Doctor</option>";
+            $.each(data, function (i, v1) {
+                v += "<option value=" + v1.Value + ">" + v1.Text + "</option>";
+            });
+            $("#Doct_ID").html(v);
+        });
+    };
+    function getpatient(value) {
+        alert(value);
+        debugger;
+
+        $("#Patient_ID").empty();
+        var data = { Doct_ID: value }
+        $.getJSON("/Insurance/Patient_Bind", { Doct_ID: value }, function (data) {
+            data = JSON.parse(data);
+            var v = "<option value=0>Please Select Patient</option>";
+            $.each(data, function (i, v1) {
+                v += "<option value=" + v1.Value + ">" + v1.Text + "</option>";
+            });
+            $("#Patient_ID").html(v);
+        });
+    };
+
+    function getsvhemeandInsu(value) {
+        $("#Insurance_Name").empty();
+        $("#Insurance_Scheme_Name").empty();
+        $("#Insurance_Scheme_ID").empty();
+        var clg = { Patient_ID: $("#Patient_ID").val() };
+        $.getJSON("Insurance/InsuranceBind", clg, function (data) {
+            debugger;
+            data = JSON.parse(data);
+            $("#Insurance_Name").val(data.Insurance_Name);
+            $("#Insurance_Scheme_Name").val(data.Insurance_Scheme_Name);
+            $("#Insurance_Scheme_ID").val(data.Insurance_Scheme_ID);
+        });
+    };
+
+
+    $("#saveupdate").click(function () {
+
+        var clg = { Patient_ID: $("#Patient_ID").val(), Admission_Date: $("#Admission_Date").val(), Discharge_Date: $("#Discharge_Date").val(), Total_Expenses: $("#Total_Expenses").val(), Insurance_Scheme_ID: $("#Insurance_Scheme_ID").val() };
+        $.post("Insurance/SaveUpdate", clg, function () {
+            location.reload()
+            alert("Data Inserted")
+            GetAllData();
+        });
+
+    });
+
+
+    function GetAllData() {
+        $("#table_college tbody tr").remove();
+        $.getJSON("Insurance/GetAllpatientData", function (data) {
+            data = JSON.parse(data);
+            $.each(data, function (i, prod) {
+                $("#table_college tbody").append(
+                    `<tr>
+
+
+                        <td>` + prod.Doct_Name + `</td>
+                        <td>` + prod.Patient_Name + `</td>
+                        <td>` + prod.Insurance_Name + `</td>
+                        <td>` + prod.Insurance_Scheme_Name + `</td>
+                        <td>` + prod.Admission_Date + `</td>
+                        <td>` + prod.Discharge_Date + `</td>
+                        <td>` + prod.Total_Expenses + `</td>
+                        <td>` + prod.Insured_amount + `</td>
+                        <td>` + prod.Total_Payble_Amount + `</td>
+                        <td><button class="btn btn-primary" onclick="Edit(` + prod.Patient_ID + `)">Cerificate </  button>
+
+                   </tr>`
+                );
+            });
+        });
+    }
+
+</script>
+
+
+<script type="text/javascript">
+    //$("#btnExportPdf").click(function () {
+    //    window.location.href = "Excelie/GeneratePDF";
+
+
+    function Edit(Patient_ID) {
+        window.location.href = "Insurance/GeneratePDF?id=" + Patient_ID;
+    }
+</script>
+
